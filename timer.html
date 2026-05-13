@@ -1,0 +1,128 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1rem 2rem;
+    gap: 2rem;
+  }
+  .display {
+    font-size: 88px;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+    color: var(--color-text-primary);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+  .display.done { color: var(--color-text-danger); }
+  .status {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    height: 16px;
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .time-input {
+    width: 56px;
+    padding: 8px;
+    border-radius: 6px;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-secondary);
+    color: var(--color-text-primary);
+    font-size: 16px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+  }
+  .time-input:focus { outline: none; border-color: var(--color-border-primary); }
+  .lbl { font-size: 12px; color: var(--color-text-secondary); }
+  .btn-row { display: flex; gap: 12px; }
+</style>
+
+<div class="wrap">
+  <div class="display" id="disp">25:00</div>
+  <div class="status" id="status"></div>
+  <div class="input-row">
+    <input class="time-input" id="inp-m" type="number" min="0" max="99" value="25" />
+    <span class="lbl">分</span>
+    <input class="time-input" id="inp-s" type="number" min="0" max="59" value="00" />
+    <span class="lbl">秒</span>
+  </div>
+  <div class="btn-row">
+    <button id="btn-start">スタート</button>
+    <button id="btn-reset">リセット</button>
+  </div>
+</div>
+
+<script>
+  let remaining = 25 * 60;
+  let running = false;
+  let timer = null;
+
+  const disp = document.getElementById('disp');
+  const status = document.getElementById('status');
+  const btnStart = document.getElementById('btn-start');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function render() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    disp.textContent = pad(m) + ':' + pad(s);
+    disp.className = 'display' + (remaining === 0 ? ' done' : '');
+  }
+
+  function getInput() {
+    const m = Math.min(parseInt(document.getElementById('inp-m').value) || 0, 99);
+    const s = Math.min(parseInt(document.getElementById('inp-s').value) || 0, 59);
+    return m * 60 + s;
+  }
+
+  btnStart.addEventListener('click', () => {
+    if (running) {
+      clearInterval(timer);
+      running = false;
+      btnStart.textContent = 'スタート';
+      status.textContent = '一時停止';
+    } else {
+      if (remaining === 0) { remaining = getInput(); render(); }
+      if (remaining === 0) return;
+      running = true;
+      btnStart.textContent = '一時停止';
+      status.textContent = '実行中';
+      timer = setInterval(() => {
+        remaining--;
+        render();
+        if (remaining <= 0) {
+          clearInterval(timer);
+          running = false;
+          btnStart.textContent = 'スタート';
+          status.textContent = '完了';
+        }
+      }, 1000);
+    }
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    clearInterval(timer);
+    running = false;
+    remaining = getInput();
+    btnStart.textContent = 'スタート';
+    status.textContent = '';
+    render();
+  });
+
+  ['inp-m','inp-s'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      if (!running) { remaining = getInput(); render(); }
+    });
+  });
+
+  render();
+</script>
